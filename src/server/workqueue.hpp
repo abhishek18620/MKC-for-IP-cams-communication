@@ -6,8 +6,8 @@
  * @author Abhishek Rawat (abhishek18620@gmail.com)
  */
 
-#ifndef IP_CAMS_COMMUNICATION_SRC_SERVER_MAIN_SERVER_HPP_
-#define IP_CAMS_COMMUNICATION_SRC_SERVER_MAIN_SERVER_HPP_
+#ifndef MKC_FOR_IP_CAMS_COMMUNICATION_SRC_SERVER_WORKQUEUE_HPP_
+#define MKC_FOR_IP_CAMS_COMMUNICATION_SRC_SERVER_WORKQUEUE_HPP_
 
 /*
  * sys includes
@@ -21,12 +21,9 @@
 /*
  * our includes
  * */
-#include <event.h>
+#include <event2/event.h>
 
 namespace server {
-
-  /** For testing purposes only, port will only be 5555 */
-  constexpr int32_t port = 5555;
 
   /** structure for worker entity */
   typedef struct Worker {
@@ -49,7 +46,7 @@ namespace server {
     pthread_cond_t jobs_cond;
   };
 
-  class Worker {
+  class WorkeQueue {
   public:
     WorkQueue() : {}
 
@@ -60,9 +57,7 @@ namespace server {
 
     void workqueue_add_job(workqueue_t *workqueue, job_t *job);
 
-    ::std::thread m_thread;
-
-    uint32_t m_terminate_signal;
+    ::std::vector <Worker> m_workers;
 
     ::std::queue <WorkQueue> m_work_queue;
   }
