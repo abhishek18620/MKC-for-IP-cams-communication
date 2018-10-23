@@ -1,11 +1,9 @@
 /**
  * @file rsa.hpp
  *
- * @copyright Tarana Wireless, Inc.  All Rights Reserved.
- *
  * @brief Header for Encryption module
  *
- * @author Abhishek Rawat (abhishek.rawat@taranawireless.com)
+ * @author Abhishek Rawat (abhishek18620@gmail.com)
  */
 
 #ifndef MKC_FOR_IP_CAMS_COMMUNICATION_SRC_ENCRYPTION_RSA_HPP_
@@ -14,17 +12,27 @@
 /*
  * sys includes
  * */
+#include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 /*
  * our includes
  * */
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/cpp_bin_float.hpp>
 
-struct key {
-  uint64_t mod;
-  uint64_t exp;
-}
+using namespace boost::multiprecision;
+
+typedef struct _Key Key;
+
+struct _Key {
+  cpp_int modulus;
+  cpp_int exponent;
+
+  _Key(cpp_int x, cpp_int y) : modulus(x), exponent(y) {}
+};
 
 class RsaEncrytion {
 public:
@@ -35,36 +43,91 @@ public:
    * @param priv
    * @param PRIME_SOURCE_FILE
    */
-  void rsa_gen_keys(struct public_key_class *pub,
-                    struct private_key_class *priv,
-                    const char *PRIME_SOURCE_FILE);
+  void RsaKeyGenerate();
 
   /**
-   * @brief Encrypts the message text.
+   * @brief
    *
    * @param message
-   * @param message_size
-   * @param pub
    *
    * @return
    */
-  uint64_t *rsa_encrypt(const char *message, const unsigned long message_size,
-                        const struct public_key_class *pub);
+  ::std::string Encrypt(::std::string &message);
 
   /**
-   * @brief Decrypts the message
+   * @brief
    *
    * @param message
-   * @param message_size
-   * @param pub
    *
    * @return
    */
-  char *rsa_decrypt(const long long *message, const unsigned long message_size,
-                    const struct private_key_class *pub);
+  ::std::string Decrypt(::std::string &message);
 
 private:
-  ::std::string primes_file;
-}
+  /**
+   * @brief Number of cores = Number of threads it can run concurrently
+   *
+   * @return number of cores in the system
+   */
+  cpp_int GetNumberOfCores() const {
+    return ::std::thread::hardware_concurrency();
+  }
+
+  /**
+   * @brief
+   *
+   * @param message
+   * @param start
+   * @param end
+   * @param index
+   * @param encrypted
+   */
+  void ParallelEncrypt(::std::string &message, cpp_int start, cpp_int end,
+                       cpp_int index, ::std::vector<::std::string> &encrypted);
+
+  /**
+   * @brief
+   *
+   * @param message
+   * @param start
+   * @param end
+   * @param index
+   * @param a*b
+   * @param b
+   */
+  void ParallelDecrypt(::std::string &message, cpp_int start, cpp_int end,
+                                   cpp_int index, ::std::vector<::std::string> &decrypted);
+
+
+  cpp_int ModularExponentiation(cpp_int x, cpp_int y);
+
+  /**
+   * @brief Counts number of bits in a decimal
+   */
+  static cpp_int GetNumberOfBits(cpp_int x) {
+    return cpp_int(log2(cpp_bin_float_100(x))) + 1;
+  }
+
+  /**
+   * @brief calculates modular multiplicative inverse (y such that  x*y=1(mod)m)
+   *
+   * @returns cpp_int modular multiplicative inverse of x with mod
+   */
+  static cpp_int InverseMod(cpp_int a, cpp_int mod);
+
+  cpp_int m_mod; // modulus : should be a large number
+
+  cpp_int m_prime1;
+
+  cpp_int m_prime2;
+
+  cpp_int m_max_num_of_digits;
+
+  ::std::shared_ptr<_Key> m_public_key;
+
+  ::std::shared_ptr<_Key> m_private_key;
+
+  static ::std::string m_primes_file;
+};
 
 #endif
