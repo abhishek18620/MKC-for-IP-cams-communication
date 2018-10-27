@@ -64,6 +64,12 @@ public:
   ::std::string Decrypt(::std::string &message);
 
 private:
+
+void MontgomeryReductionInit();
+
+cpp_int MontgomeryReductionMultiply(cpp_int x, cpp_int y);
+
+
   /**
    * @brief Number of cores = Number of threads it can run concurrently
    *
@@ -99,6 +105,10 @@ private:
                                    cpp_int index, ::std::vector<::std::string> &decrypted);
 
 
+  void convert_in(cpp_int &x) const { (x << m_reducer_bits.convert_to<unsigned> ()) % m_mod; }
+
+  void convert_out(cpp_int &x) const { (x * m_mod_mul_inverse) % m_mod; }
+
   cpp_int ModularExponentiation(cpp_int x, cpp_int y);
 
   /**
@@ -120,6 +130,18 @@ private:
   cpp_int m_prime1;
 
   cpp_int m_prime2;
+
+  cpp_int m_reducer;
+
+  cpp_int m_factor;
+
+  cpp_int m_reducer_bits;
+
+  cpp_int m_mask;
+
+  cpp_int m_mod_mul_inverse;
+
+  cpp_int m_converted_reducer;
 
   cpp_int m_max_num_of_digits;
 

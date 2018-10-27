@@ -1,5 +1,9 @@
 # abhishek18620's files
 mkc/
 googletest/
+objs/
+bin/
 *.vim
-
+primes*
+sample*
+*.out

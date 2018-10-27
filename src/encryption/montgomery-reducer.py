@@ -2,31 +2,34 @@ import fractions
 import random
 import unittest
 
-
 class MontgomeryReducerTest(unittest.TestCase):
 
     def test_basic(self):
-        for _ in range(3):
+        for _ in range(1):
             bitlen = random.randint(2, 100)
             # Force it to be odd
             #mod = random.randrange(1 << bitlen, 2 << bitlen) | 1
-            mod = 13
+            mod = 2891126893
             mr = MontgomeryReducer(mod)
-            print (mr.pow(2, 5))
-            for _ in range(100):
-                x = random.randrange(0, mod)
-                y = random.randrange(0, mod)
+            #print (mr.pow(2, 5))
+            #checking multiply
+            for _ in range(1):
+                x = 2#random.randrange(0, mod)
+                y = 5#random.randrange(0, mod)
                 u = mr.convert_in(x)
                 v = mr.convert_in(y)
                 w = mr.multiply(u, v)
+                print("w = {0}".format(mr.convert_out(w)))
                 if mr.convert_out(w) != x * y % mod:
                     raise AssertionError()
-
-            for _ in range(10):
-                x = random.randrange(0, mod)
-                y = random.randrange(0, mod)
+            # checking pow
+            for _ in range(1):
+                x = 49#random.randrange(0, mod)
+                y = 17#random.randrange(0, mod)
                 u = mr.convert_in(x)
+                print("u = {0}".format(u))
                 v = mr.pow(u, y)
+                print("ans = {0}".format(mr.convert_out(v)))
                 if mr.convert_out(v) != pow(x, y, mod):
                     raise AssertionError()
 
@@ -50,7 +53,7 @@ class MontgomeryReducer(object):
             self.reducer % mod, mod)
         self.factor = (self.reducer * self.reciprocal - 1) // mod
         self.convertedone = self.reducer % mod
-        print("mod = {0}, bitlen = {1}, self.reducerbits = {2}, self.reducer = {3}".format(self.modulus, mod.bit_length(), self.reducerbits, self.reducer))
+        print("mod = {0}, bitlen = {1}, self.reducerbits = {2}, self.reducer = {3} self.factor = {4}".format(self.modulus, mod.bit_length(), self.reducerbits, self.reducer, self.factor))
     # The range of x is unlimited
 
     def convert_in(self, x):
@@ -105,7 +108,4 @@ class MontgomeryReducer(object):
 
 
 if __name__ == "__main__":
-    mod = 13
-    mr = MontgomeryReducer(mod)
-    print (mr.pow(2, 6))
-    #unittest.main()
+    unittest.main()

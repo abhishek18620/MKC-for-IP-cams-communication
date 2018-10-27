@@ -47,6 +47,7 @@ using ::std::ref;
 using namespace boost::multiprecision;
 using boost::math::gcd;
 
+#define trace(x)          cerr <<"Function : "<<__func__<<" | "<<#x<<": "<<x<< endl;
 #define trace2(x, y)          cerr <<"Function : "<<__func__<<" | "<<#x<<": "<<x<<" | "<<#y<<": "<<y<< endl;
 #define trace3(x, y, z)       cerr <<"Function : "<<__func__<<" | "<<#x<<": "<<x<<" | "<<#y<<": "<<y<<" | "<<#z<<": "<<z<<endl;
 #define trace4(a, b, c, d)    cerr <<"Function : "<<__func__<<" | "<<#a<<": "<<a<<" | "<<#b<<": "<<b<<" | "<<#c<<": "<<c<<" | "<<#d<<": "<<d<<endl;
@@ -78,31 +79,10 @@ using boost::math::gcd;
  **/
 
 /** static data members */
-string RsaEncrytion::m_primes_file = "primes16.txt";
+string RsaEncrytion::m_primes_file = "primes256.txt";
 
 static inline void RemoveLeadingZeroes(string &str) {
   str.erase(0, min(str.find_first_not_of('0'), str.size() - 1));
-}
-
-cpp_int RsaEncrytion::ModularExponentiation(cpp_int x, cpp_int y)
-{
-    //trace3(x, y, m_mod);
-    cpp_int res = 1;      // Initialize result
-
-    x = x % m_mod;  // Update x if it is more than or
-                // equal to p
-
-    while (y > 0)
-    {
-        // If y is odd, multiply x with result
-        if (y & 1)
-            res = (res*x) % m_mod;
-
-        // y must be even now
-        y = y>>1; // y = y/2
-        x = (x*x) % m_mod;
-    }
-    return res;
 }
 
 static inline string ConcatenateVectorOfstring(vector<string> &vec_str) {
@@ -135,49 +115,55 @@ cpp_int RsaEncrytion::InverseMod(cpp_int a, cpp_int mod) {
   return x;
 }
 
-/*[>* Montgomery reduction for calculating (a*b)mod(n)<]*/
-//void RsaEncrytion::MontgomeryReductionInit() {
-  ////trace2(__func__, m_mod);
-  //if(m_mod < 3 or !(m_mod&1)) {
-    //throw invalid_argument("mod should be odd and greater than 3");
-  //}
-  //cpp_int reducer_bits = (GetNumberOfBits(m_mod) / 8 + 1) * 8;
-  //cpp_int m_reducer = cpp_int(1) << reducer_bits.convert_to<unsigned> (); // 2^reducer_bits
-  //cpp_int m_mask = m_reducer - 1;
-  //[>* m_reducer(r) should be greater than and coprime with it <]
-  //assert(m_reducer > m_mod and gcd(m_reducer, m_mod) == 1);
-  //m_mod_mul_inverse = InverseMod(m_reducer % m_mod, m_mod);
-  //m_factor = (m_reducer * m_mod_mul_inverse - 1) / m_mod;
-  //m_converted_reducer = m_reducer % m_mod;
-//}
+// Montgomery reduction for calculating (a*b)mod(n)
+void RsaEncrytion::MontgomeryReductionInit() {
+  //trace2(__func__, m_mod);
+  if(m_mod < 3 or !(m_mod&1)) {
+    throw invalid_argument("mod should be odd and greater than 3");
+  }
+  m_reducer_bits = GetNumberOfBits(m_mod); // / 8 + 1) * 8;
+  m_reducer = cpp_int(1) << m_reducer_bits.convert_to<unsigned> (); // 2^reducer_bits
+  m_mask = m_reducer - 1;
+  //m_reducer(r) should be greater than and coprime with it <]
+  assert(m_reducer > m_mod and gcd(m_reducer, m_mod) == 1);
+  m_mod_mul_inverse = InverseMod(m_reducer % m_mod, m_mod);
+  m_factor = (m_reducer * m_mod_mul_inverse - 1) / m_mod;
+  m_converted_reducer = m_reducer % m_mod;
+  //trace5(m_reducer_bits, m_reducer, m_mask, m_factor, m_converted_reducer);
+}
 
-//cpp_int RsaEncrytion::MontgomeryReductionMultiply(cpp_int x, cpp_int y) {
-  ////trace2(x, y);
-  ////assert(x >= 0 and x < m_mod and y >= 0 and y < m_mod);
-  //cpp_int product = x * y;
-  //cpp_int temp = ((product & m_mask) * m_factor) & m_mask;
-  //cpp_int reduced = (product + temp * m_mod) >> m_reducer_bits;
-  //cpp_int result = (reduced < m_mod) ? reduced : reduced - m_mod;
-  ////trace2(result, m_mod);
-  ////assert(result >= 0 and result < m_mod);
-  //return result;
-//}
+cpp_int RsaEncrytion::MontgomeryReductionMultiply(cpp_int x, cpp_int y) {
+  //trace2(x, y);
+  //assert(x >= 0 and x < m_mod and y >= 0 and y < m_mod);
+  convert_in(x);
+  convert_in(y);
+  cpp_int product = x * y;
+  cpp_int temp = ((product & m_mask) * m_factor) & m_mask;
+  cpp_int reduced = (product + temp * m_mod) >> m_reducer_bits.convert_to<unsigned> ();
+  cpp_int result = (reduced < m_mod) ? reduced : reduced - m_mod;
+  //trace2(result, m_mod);
+  //assert(result >= 0 and result < m_mod);
+  convert_out(result);
+  return result;
+}
 
-//cpp_int RsaEncrytion::ModularExponentiation(cpp_int x, cpp_int y) {
-  ////trace3(__func__, x, y);
-  //assert(x >= 0 and x < m_mod);
-  //if (y < 0) {
-    //throw invalid_argument("Exponent should be greater than 0");
-  //}
-  //cpp_int z = m_converted_reducer;
-  //while (y != 0) {
-    //if (y & 1)
-      //z = MontgomeryReductionMultiply(z, x);
-    //x = MontgomeryReductionMultiply(x, x);
-    //y >>= 1;
-  //}
-  //return z;
-/*}*/
+cpp_int RsaEncrytion::ModularExponentiation(cpp_int x, cpp_int y) {
+  convert_in(x);
+  assert(x >= 0 and x < m_mod);
+  if (y < 0) {
+    throw invalid_argument("Exponent should be greater than 0");
+  }
+  cpp_int z = m_converted_reducer;
+  while (y != 0) {
+    if (y & 1)
+      z = MontgomeryReductionMultiply(z, x);
+    x = MontgomeryReductionMultiply(x, x);
+    y >>= 1;
+  }
+  convert_out(z);
+  //trace3(x, y, z);
+  return z;
+}
 
 void RsaEncrytion::RsaKeyGenerate() {
   fstream primes_list_handler(m_primes_file, primes_list_handler.in);
@@ -190,7 +176,7 @@ void RsaEncrytion::RsaKeyGenerate() {
   // p, q : random prime numbers
   cpp_int p = 0;
   cpp_int q = 0;
-  cpp_int e = (1<<8) + 1;
+  cpp_int e = 17; //(1<<8) + 1;
   cpp_int d = 0;
   cpp_int n = 0;
   cpp_int phi_of_n = 0;
@@ -222,6 +208,7 @@ void RsaEncrytion::RsaKeyGenerate() {
   // hence the while loop.
   m_mod = n = p * q;
   d = InverseMod(e, phi_of_n);
+  MontgomeryReductionInit();
   m_max_num_of_digits = n.convert_to <string> ().length();
   //trace2(n, m_max_num_of_digits);
   while (d < 0) {
@@ -229,14 +216,14 @@ void RsaEncrytion::RsaKeyGenerate() {
   }
 
   //MontgomeryReductionInit();
-  //trace2(p, q);
-  //trace4(n, phi_of_n, e, d);
+  trace2(p, q);
+  trace4(n, phi_of_n, e, d);
   //cout <<"primes are p = " << p<<" : q = "<< q<<endl;
   //printf("primes are %lld and %lld\n", (cpp_int)p, (cpp_int)q);
   // We now store the public / private keys in the appropriate structs
   m_public_key = ::std::make_shared <_Key> (n, e);
   m_private_key = ::std::make_shared <_Key> (n, d);
-  //trace4(m_public_key->modulus, m_public_key->exponent, m_private_key->modulus, m_private_key->exponent);
+  trace4(m_public_key->modulus, m_public_key->exponent, m_private_key->modulus, m_private_key->exponent);
 }
 
 /** Parallel Rsa */
@@ -290,7 +277,7 @@ void RsaEncrytion::ParallelDecrypt(string &message, cpp_int start, cpp_int end,
 
 string RsaEncrytion::Encrypt(string &message) {
   cpp_int thread_index = 0;
-  cpp_int num_of_cores = GetNumberOfCores();
+  cpp_int num_of_cores = 1; //GetNumberOfCores();
   vector<thread> threadpool(num_of_cores.convert_to<int> ());
   cpp_int txt_for_each_core =
       message.length() / num_of_cores; // this is essentially an integer
@@ -308,12 +295,13 @@ string RsaEncrytion::Encrypt(string &message) {
   }
   for (auto &thread_i : threadpool) thread_i.join();
   string encrypted_message = ConcatenateVectorOfstring(encrypted);
+  //trace(num_of_cores);
   return encrypted_message;
 }
 
 string RsaEncrytion::Decrypt(string &message) {
   cpp_int thread_index = 0;
-  cpp_int num_of_cores = GetNumberOfCores();
+  cpp_int num_of_cores = 1; //GetNumberOfCores();
   cpp_int num_of_blocks = message.length() / m_max_num_of_digits;
   cpp_int num_of_blocks_for_each_core = num_of_blocks / num_of_cores;
   vector<thread> threadpool(num_of_cores.convert_to<int> ());
@@ -331,6 +319,7 @@ string RsaEncrytion::Decrypt(string &message) {
   }
   for (auto &thread_i : threadpool) thread_i.join();
   string decrypted_message = ConcatenateVectorOfstring(decrypted);
+  //trace(num_of_cores);
   //trace2(num_of_blocks, decrypted_message);
   return decrypted_message;
 }
