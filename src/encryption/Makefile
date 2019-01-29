@@ -9,7 +9,7 @@ CPPFLAGS = -std=c++14 -Wall
 LIBS = -lpthread
 
 run: all
-	./bin/rsa_out
+	./bin/rsa_out #&& ./bin/rsa_out && ./bin/rsa_out
 
 all: bin/rsa_out
 $(BIN)/rsa_out: $(OBJ_DIR)/rsa.o

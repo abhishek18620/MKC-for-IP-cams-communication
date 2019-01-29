@@ -20,8 +20,8 @@
 /*
  * our includes
  * */
-#include <boost/multiprecision/cpp_int.hpp>
 #include <boost/multiprecision/cpp_bin_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 using namespace boost::multiprecision;
 
@@ -64,11 +64,9 @@ public:
   ::std::string Decrypt(::std::string &message);
 
 private:
+  void MontgomeryReductionInit();
 
-void MontgomeryReductionInit();
-
-cpp_int MontgomeryReductionMultiply(cpp_int x, cpp_int y);
-
+  cpp_int MontgomeryReductionMultiply(cpp_int x, cpp_int y);
 
   /**
    * @brief Number of cores = Number of threads it can run concurrently
@@ -102,10 +100,11 @@ cpp_int MontgomeryReductionMultiply(cpp_int x, cpp_int y);
    * @param b
    */
   void ParallelDecrypt(::std::string &message, cpp_int start, cpp_int end,
-                                   cpp_int index, ::std::vector<::std::string> &decrypted);
+                       cpp_int index, ::std::vector<::std::string> &decrypted);
 
-
-  void convert_in(cpp_int &x) const { (x << m_reducer_bits.convert_to<unsigned> ()) % m_mod; }
+  void convert_in(cpp_int &x) const {
+    (x << m_reducer_bits.convert_to<unsigned>()) % m_mod;
+  }
 
   void convert_out(cpp_int &x) const { (x * m_mod_mul_inverse) % m_mod; }
 
