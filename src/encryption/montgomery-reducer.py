@@ -14,20 +14,21 @@ class MontgomeryReducerTest(unittest.TestCase):
             #print (mr.pow(2, 5))
             #checking multiply
             for _ in range(1):
-                x = 2#random.randrange(0, mod)
-                y = 5#random.randrange(0, mod)
+                x = random.randrange(0, mod)
+                y = random.randrange(0, mod)
                 u = mr.convert_in(x)
                 v = mr.convert_in(y)
                 w = mr.multiply(u, v)
+                print("x = {0} x' = {1}\ny = {2} y' = {3}\nproduct = {4}".format(x, u, y, v, w))
                 print("w = {0}".format(mr.convert_out(w)))
                 if mr.convert_out(w) != x * y % mod:
                     raise AssertionError()
             # checking pow
             for _ in range(1):
-                x = 49#random.randrange(0, mod)
-                y = 17#random.randrange(0, mod)
+                x = random.randrange(0, mod)
+                y = random.randrange(0, mod)
                 u = mr.convert_in(x)
-                print("u = {0}".format(u))
+                print("x = {0} u = {1}".format(x, u))
                 v = mr.pow(u, y)
                 print("ans = {0}".format(mr.convert_out(v)))
                 if mr.convert_out(v) != pow(x, y, mod):
@@ -70,6 +71,7 @@ class MontgomeryReducer(object):
         mod = self.modulus
         assert 0 <= x < mod and 0 <= y < mod
         product = x * y
+        print("product : {0}".format(product))
         temp = ((product & self.mask) * self.factor) & self.mask
         reduced = (product + temp * mod) >> self.reducerbits
         result = reduced if (reduced < mod) else (reduced - mod)

@@ -49,19 +49,21 @@ public:
    * @brief
    *
    * @param message
+   * @param num_of_cores : # of cores that to be used
    *
    * @return
    */
-  ::std::string Encrypt(::std::string &message);
+  ::std::string Encrypt(::std::string &message, int &num_of_cores);
 
   /**
    * @brief
    *
    * @param message
+   * @param num_of_cores : # of cores that to be used
    *
    * @return
    */
-  ::std::string Decrypt(::std::string &message);
+  ::std::string Decrypt(::std::string &message, int &num_of_cores);
 
 private:
   void MontgomeryReductionInit();

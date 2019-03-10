@@ -284,22 +284,22 @@ void RsaEncrytion::ParallelDecrypt(string &message, cpp_int start, cpp_int end,
   decrypted[index.convert_to<int>()] = decrypted_str;
 }
 
-string RsaEncrytion::Encrypt(string &message) {
+string RsaEncrytion::Encrypt(string &message, int &num_of_cores) {
   cpp_int thread_index = 0;
-  cpp_int num_of_cores = GetNumberOfCores();
-  vector<thread> threadpool(num_of_cores.convert_to<int>());
+  //cpp_int num_of_cores = GetNumberOfCores();
+  vector<thread> threadpool(num_of_cores);
   cpp_int txt_for_each_core =
       message.length() / num_of_cores; // this is essentially an integer
   cpp_int start = 0;
   cpp_int end = txt_for_each_core - 1;
-  vector<string> encrypted(num_of_cores.convert_to<int>());
+  vector<string> encrypted(num_of_cores);
   for (auto &thread_i : threadpool) {
     thread_i = move(thread(&RsaEncrytion::ParallelEncrypt, this, ref(message),
                            start, end, thread_index, ref(encrypted)));
     thread_index++;
     start = end + 1;
     // last thread should take extra left characters
-    end = (thread_index == num_of_cores - 1)
+    end = (thread_index == cpp_int(num_of_cores) - 1)
               ? cpp_int(message.length() - 1)
               : cpp_int(start + txt_for_each_core - 1);
   }
@@ -310,13 +310,13 @@ string RsaEncrytion::Encrypt(string &message) {
   return encrypted_message;
 }
 
-string RsaEncrytion::Decrypt(string &message) {
+string RsaEncrytion::Decrypt(string &message, int &num_of_cores) {
   cpp_int thread_index = 0;
-  cpp_int num_of_cores = GetNumberOfCores();
+  // cpp_int num_of_cores = GetNumberOfCores();
   cpp_int num_of_blocks = message.length() / m_max_num_of_digits;
   cpp_int num_of_blocks_for_each_core = num_of_blocks / num_of_cores;
-  vector<thread> threadpool(num_of_cores.convert_to<int>());
-  vector<string> decrypted(num_of_cores.convert_to<int>());
+  vector<thread> threadpool(num_of_cores);
+  vector<string> decrypted(num_of_cores);
   cpp_int start = 0;
   cpp_int end = num_of_blocks_for_each_core - 1;
   for (auto &thread_i : threadpool) {
@@ -324,7 +324,7 @@ string RsaEncrytion::Decrypt(string &message) {
                            start, end, thread_index, ref(decrypted)));
     thread_index++;
     start = end + 1;
-    end = (thread_index == num_of_cores - 1)
+    end = (thread_index == cpp_int(num_of_cores) - 1)
               ? cpp_int(num_of_blocks - 1)
               : cpp_int(start + num_of_blocks_for_each_core - 1);
   }
